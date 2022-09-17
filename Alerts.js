@@ -1,38 +1,66 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, SafeAreaView, Text, Alert, TouchableOpacity } from 'react-native';
-import init from 'react_native_mqtt';
+// import init from 'react_native_mqtt';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+// import Paho from "paho-mqtt"
+import mqtt from 'mqtt';
 
-init({
-  size: 10000,
-  storageBackend: AsyncStorage,
-  defaultExpires: 1000 * 3600 * 24,
-  enableCache: true,
-  sync : {}
-});
+// init({
+//   size: 10000,
+//   storageBackend: AsyncStorage,
+//   defaultExpires: 1000 * 3600 * 24,
+//   enableCache: true,
+//   sync: {},
+// });
 
+const host = 'mqtt://broker.emqx.io:1883/testMqtt'
+
+const options = {
+  keepalive: 60,
+  clientId: 'mqttx_336091ca',
+  protocolId: 'MQTT',
+  protocolVersion: 4,
+  clean: true,
+  reconnectPeriod: 1000,
+  connectTimeout: 30 * 1000,
+  will: {
+    topic: 'WillMsg',
+    payload: 'Connection Closed abnormally..!',
+    qos: 0,
+    retain: false
+  },
+}
 export default function Alerts({ route }) {
-  const { host, port, topic, id } = route.params;
+  // const { host, port, topic, id } = route.params;
   const [subscribedTopic, setSubscribedTopic] = useState('')
   const [status, setStatus] = useState('')
-  client = new Paho.MQTT.Client(host, Number(port), `/${topic}`);
+  // client = new Paho.MQTT.Client(host, Number(port), `/${topic}`);
+  // const client = new Paho.MQTT.Client('mqtt://broker.emqx.io', 1883, 'mqttx_336091ca',);
 
+  // client.connect({ 
+  //   onSuccess: (e) => {console.log('sucessoooo', e)},
+  //   useSSL: false ,
+  //   userName: '',
+  //   password: '',
+  //   onFailure: (e) => {console.log("here is the error" , e); }
+
+  // });
   const subscribe = () => {
-    setSubscribedTopic(topic);
-    client.subscribe(topic, { qos: 0 });
+    // setSubscribedTopic(topic);
+    // client.subscribe(topic, { qos: 0 });
   }
 
   const publish = () =>{ 
-    var message = new Paho.MQTT.Message(id + ':' + topic);
-    message.destinationName = topic;
-    client.send(message);
+    // var message = new Paho.MQTT.Message(id + ':' + topic);
+    // message.destinationName = topic;
+    // client.send(message);
     console.log('subscribed and published');
 
   }
 
   const unsubscribe = () =>{
-    client.unsubscribe(subscribedTopic);
-    setSubscribedTopic('')
+    // client.unsubscribe(subscribedTopic);
+    // setSubscribedTopic('')
     console.log('unsubscribed');
   }
 
@@ -47,6 +75,7 @@ export default function Alerts({ route }) {
   const onConnect = () => { 
     console.log('onConnect');
     setStatus('connected');
+    // client.subscribe('mqttProject');
   }
 
   const onFailure = (err) => { 
@@ -57,12 +86,22 @@ export default function Alerts({ route }) {
 
   const connect = () => { 
     setStatus('isFetching');
-    client.connect({
-      onSuccess: onConnect,
-      useSSL: false,
-      timeout: 3,
-      onFailure: onFailure
-    });    
+    const client = mqtt.connect(host, options)
+    client.on('error', (err) => {
+      console.log('Connection error: ', err)
+      client.end()
+    })
+    
+    client.on('reconnect', () => {
+      console.log('Reconnecting...')
+    })
+    // client.connect({
+    //   onSuccess: onConnect,
+    //   useSSL: false,
+    //   timeout: 3,
+    //   onFailure: onFailure
+    // });    
+    
   }
 
   useEffect(() => {
